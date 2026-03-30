@@ -6,7 +6,7 @@ export default function Dashboard() {
   const [fraudData, setFraudData] = useState(null);
   const [riskLevel, setRiskLevel] = useState('safe');
 
-  // Sample fraud network data - shows how scammers reuse SIM cards
+  // Sample fraud network data
   const fraudNetwork = {
     nodes: [
       { id: '0722123456', name: 'Unknown Sender', risk: 95, cluster: 'Ring Leader' },
@@ -26,6 +26,7 @@ export default function Dashboard() {
     if (!phoneNumber || phoneNumber.length < 9) {
       setSafetyScore(0);
       setRiskLevel('safe');
+      setFraudData(null);
       return;
     }
 
@@ -55,6 +56,23 @@ export default function Dashboard() {
     e.preventDefault();
     calculateSafetyScore(selectedNumber);
   };
+
+  // 🔥 NEW: WebSocket Listener for Live Sync
+  useEffect(() => {
+    const socket = new WebSocket('ws://127.0.0.1:8001/ws/mpesa');
+    
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      // Listen for the broadcast from fraud.py
+      if (data.type === 'FRAUD_UPDATE') {
+        console.log("📊 Dashboard received live update for:", data.phone);
+        setSelectedNumber(data.phone); // Auto-fill the search box
+        calculateSafetyScore(data.phone); // Auto-update the meter and graphs
+      }
+    };
+
+    return () => socket.close();
+  }, []); // Empty dependency array ensures it only connects once
 
   const getRiskColor = () => {
     switch(riskLevel) {
@@ -142,7 +160,7 @@ export default function Dashboard() {
 
           {/* Details Card */}
           {fraudData && (
-            <div className="bg-slate-700/50 rounded-xl p-6 border border-orange-500/30 backdrop-blur">
+            <div className="bg-slate-700/50 rounded-xl p-6 border border-orange-500/30 backdrop-blur animate-in fade-in zoom-in duration-300">
               <h4 className="font-bold text-orange-300 mb-3">📋 Details</h4>
               <div className="space-y-2 text-sm">
                 <p><span className="text-gray-400">Number:</span> {fraudData.id}</p>
@@ -188,10 +206,12 @@ export default function Dashboard() {
                 const x = 100 + (i % 3) * 150;
                 const y = 100 + Math.floor(i / 3) * 150;
                 const color = node.risk > 80 ? '#ef4444' : node.risk > 60 ? '#f97316' : node.risk > 40 ? '#eab308' : '#22c55e';
+                // Highlight the node if it matches the currently selected number
+                const isSelected = selectedNumber && node.id.includes(selectedNumber.slice(-7));
                 
                 return (
-                  <g key={node.id}>
-                    <circle cx={x} cy={y} r="35" fill={color} opacity="0.2" stroke={color} strokeWidth="2"/>
+                  <g key={node.id} className="transition-all duration-300">
+                    <circle cx={x} cy={y} r={isSelected ? "45" : "35"} fill={color} opacity={isSelected ? "0.5" : "0.2"} stroke={color} strokeWidth={isSelected ? "4" : "2"}/>
                     <circle cx={x} cy={y} r="30" fill={color} opacity="0.4" stroke={color} strokeWidth="1" strokeDasharray="5,5"/>
                     <text x={x} y={y-8} textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
                       {node.id.slice(-4)}
@@ -224,7 +244,6 @@ export default function Dashboard() {
             <span className="text-2xl">🚫</span>
             <div>
               <p className="font-bold text-red-300">Block Rule</p>
-              {/* FIXED ERROR HERE: Added curly braces around the > symbol */}
               <p className="text-sm text-gray-400">Risk {" > "} 80%: Transaction blocked automatically</p>
             </div>
           </div>
@@ -239,7 +258,6 @@ export default function Dashboard() {
             <span className="text-2xl">✅</span>
             <div>
               <p className="font-bold text-green-300">Approve Rule</p>
-              {/* FIXED ERROR HERE: Added curly braces around the < symbol */}
               <p className="text-sm text-gray-400">Risk {" < "} 20%: Proceed instantly</p>
             </div>
           </div>
