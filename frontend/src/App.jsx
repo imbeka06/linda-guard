@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Dashboard from './Dashboard';
+import WhatsApp from './WhatsApp'; // NEW IMPORT
+import { useState, useEffect, useRef } from 'react';
+import Dashboard from './Dashboard';
 
 function App() {
   const [mode, setMode] = useState('ussd'); 
