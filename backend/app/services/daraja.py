@@ -65,9 +65,11 @@ async def trigger_stk_push(phone_number: str, amount: int, account_reference: st
             response.raise_for_status()
             return response.json()
             
-    except httpx.HTTPError as e:
-        print(f"HTTP Exception for {e.request.url} - {e}")
-        return {"error": "Failed to trigger STK Push"}
+    except httpx.HTTPStatusError as e:
+        # THIS WILL PRINT SAFARICOM's EXACT COMPLAINT!
+        error_msg = e.response.text
+        print(f"\n❌ SAFARICOM REJECTED IT: {error_msg}\n")
+        return {"error": "Failed to trigger STK Push", "details": error_msg}
     except Exception as e:
         print(f"Error: {e}")
         return {"error": str(e)}

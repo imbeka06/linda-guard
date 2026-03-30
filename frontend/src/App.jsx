@@ -31,19 +31,31 @@ function App() {
         resetSimulator();
       } else if (input === '2') {
         setStep('processing');
-        // Trigger the FastAPI Backend!
         try {
-          await fetch('http://127.0.0.1:8001/api/mpesa/pay', {
+          const response = await fetch('http://127.0.0.1:8001/api/mpesa/pay', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               phone_number: targetNumber,
-              amount: parseInt(amount),
+              amount: parseInt(amount) || 1,
               category: "General"
             })
           });
+          
+          if (response.ok) {
+             // Switch to Success Screen
+             setStep('success');
+             // Automatically reset the phone after 5 seconds
+             setTimeout(() => {
+                 resetSimulator();
+             }, 5000);
+          } else {
+             alert("❌ Safaricom rejected it.");
+             resetSimulator();
+          }
         } catch (error) {
-          console.error("Backend connection failed", error);
+          alert("🔌 Connection failed.");
+          resetSimulator();
         }
       }
     }
@@ -144,8 +156,26 @@ function App() {
 
             {step === 'processing' && (
               <div className="text-center mt-20">
-                <p className="text-green-500 font-bold animate-pulse text-lg">Pushing to M-PESA...</p>
-                <p className="text-gray-400 mt-4">Check your phone screen.</p>
+                <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-green-500 font-bold">Pushing to M-PESA...</p>
+              </div>
+            )}
+
+            {step === 'success' && (
+              <div className="text-center mt-10 animate-in fade-in zoom-in duration-500">
+                <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-900/20">
+                  <span className="text-white text-4xl">✓</span>
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Money Sent!</h2>
+                <p className="text-gray-400">Ksh {amount} successfully sent to</p>
+                <p className="text-green-500 font-bold text-lg">{targetNumber}</p>
+                
+                <div className="mt-10 p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-left">
+                  <p className="text-xs text-gray-500 uppercase tracking-widest">Transaction ID</p>
+                  <p className="text-white font-mono">SAM{Math.random().toString(36).toUpperCase().substring(2, 10)}</p>
+                </div>
+                
+                <p className="text-gray-500 text-xs mt-10 italic">Returning to home in 5s...</p>
               </div>
             )}
           </div>
