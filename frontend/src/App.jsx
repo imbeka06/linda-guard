@@ -7,6 +7,9 @@ function App() {
   const [amount, setAmount] = useState('');
 
   useEffect(() => {
+    // Welcome message on first load
+    speakMessage("Welcome to Linda Plus. Dial star three three four hash to start.");
+    
     const socket = new WebSocket('ws://127.0.0.1:8001/ws/mpesa');
     
     socket.onopen = () => {
@@ -26,8 +29,10 @@ function App() {
       const data = JSON.parse(event.data);
       if (data.status === 'completed') {
         setStep('success');
+        speakMessage("Transaction successful. Your money has been sent. Thank you for using Linda Plus.");
         setTimeout(() => resetSimulator(), 5000);
       } else {
+        speakMessage("Transaction failed. " + data.message);
         alert("❌ Transaction failed: " + data.message);
         resetSimulator();
       }
@@ -40,16 +45,22 @@ function App() {
     if (step === 'dial' && input === '*334#') {
       setStep('menu');
       setInput('');
+      // Voice guidance for menu
+      speakMessage("M-Pesa Linda Plus menu. Press 1 to Send Money, Press 2 to Withdraw Cash, Press 3 to Buy Airtime, Press 4 for Linda Plus Settings.");
     } else if (step === 'dial') {
       alert("Try dialing *334#");
       setInput('');
     } else if (step === 'menu' && input === '1') {
       setStep('number');
       setInput('');
+      // Voice guidance for number entry
+      speakMessage("Please enter the phone number you want to send money to.");
     } else if (step === 'number' && input.length >= 9) {
       setTargetNumber(input);
       setStep('amount');
       setInput('');
+      // Voice guidance for amount entry
+      speakMessage("Enter the amount to send.");
     } else if (step === 'amount' && input.length > 0) {
       setAmount(input);
       setInput('');
@@ -57,6 +68,7 @@ function App() {
     } else if (step === 'warning') {
       // THIS IS THE NEW LOGIC FOR THE WARNING SCREEN!
       if (input === '1') {
+        speakMessage("Transaction blocked. You are safe. Your money was not sent.");
         alert("🛡️ Transaction Blocked! You are safe.");
         resetSimulator();
       } else if (input === '2') {
@@ -89,10 +101,24 @@ function App() {
   const triggerFraudWarning = () => {
     setStep('warning');
     
-    // The fixed Voice Engine
+    // The fixed Voice Engine - Loud & Serious for fraud alerts
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel(); // Clears any stuck audio
       const msg = new SpeechSynthesisUtterance("Linda Plus Alert. Warning! The number you are sending money to has a high fraud risk. Press 1 to cancel, or 2 to proceed.");
+      msg.rate = 0.9; // Slower for emphasis
+      msg.pitch = 0.8; // Lower pitch for authority
+      msg.volume = 1; // Maximum volume
+      window.speechSynthesis.speak(msg);
+    }
+  };
+
+  const speakMessage = (text) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.rate = 1; // Normal speed
+      msg.pitch = 1; // Normal pitch
+      msg.volume = 0.9;
       window.speechSynthesis.speak(msg);
     }
   };
