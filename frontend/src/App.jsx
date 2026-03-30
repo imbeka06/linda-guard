@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import Dashboard from './Dashboard';
 import WhatsApp from './WhatsApp'; // NEW IMPORT
-import { useState, useEffect, useRef } from 'react';
-import Dashboard from './Dashboard';
 
 function App() {
-  const [mode, setMode] = useState('ussd'); 
+  const [mode, setMode] = useState('ussd'); // 'ussd', 'dashboard', or 'whatsapp'
   const [step, setStep] = useState('dial'); 
   const [input, setInput] = useState('');
   const [targetNumber, setTargetNumber] = useState('');
@@ -177,25 +175,30 @@ function App() {
   return (
     <>
       <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-cyan-500/50 z-50 p-4 flex justify-between items-center px-8">
-        <div className="flex gap-4">
-            <button onClick={() => setMode('ussd')} className={`px-6 py-2 rounded-lg font-bold transition-all ${mode === 'ussd' ? 'bg-cyan-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+        
+        {/* ENHANCED NAVIGATION TABS */}
+        <div className="flex gap-2 lg:gap-4">
+            <button onClick={() => setMode('ussd')} className={`px-4 lg:px-6 py-2 rounded-lg font-bold transition-all text-sm lg:text-base ${mode === 'ussd' ? 'bg-cyan-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
             📱 USSD Simulator
             </button>
-            <button onClick={() => setMode('dashboard')} className={`px-6 py-2 rounded-lg font-bold transition-all ${mode === 'dashboard' ? 'bg-cyan-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+            <button onClick={() => setMode('dashboard')} className={`px-4 lg:px-6 py-2 rounded-lg font-bold transition-all text-sm lg:text-base ${mode === 'dashboard' ? 'bg-cyan-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
             📊 Fraud Dashboard
+            </button>
+            <button onClick={() => setMode('whatsapp')} className={`px-4 lg:px-6 py-2 rounded-lg font-bold transition-all text-sm lg:text-base ${mode === 'whatsapp' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+            💬 WhatsApp AI
             </button>
         </div>
         
         {/* ENHANCED: Language Dropdown as per SRS */}
         <div className="flex items-center gap-2">
-          <span className="text-gray-400 text-sm">🌐 Language:</span>
+          <span className="text-gray-400 text-sm hidden sm:inline">🌐 Language:</span>
           <select 
             value={lang} 
             onChange={(e) => {
                 setLang(e.target.value);
                 speakMessage("Language changed.", "Lugha imebadilishwa.");
             }}
-            className="bg-slate-700 text-white border border-cyan-500/50 rounded p-1 text-sm outline-none"
+            className="bg-slate-700 text-white border border-cyan-500/50 rounded p-1 text-sm outline-none cursor-pointer"
           >
             <option value="en">English</option>
             <option value="sw">Kiswahili</option>
@@ -206,7 +209,9 @@ function App() {
         </div>
       </div>
 
+      {/* RENDER THE SELECTED VIEW */}
       {mode === 'dashboard' && <Dashboard />}
+      {mode === 'whatsapp' && <WhatsApp />}
 
       {mode === 'ussd' && (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 pt-24">
