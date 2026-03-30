@@ -93,14 +93,27 @@ function App() {
       const transcript = event.results[0][0].transcript.toLowerCase();
       console.log("🎤 User said:", transcript);
       
-      // Voice AI Parsing Logic
-      if (transcript.includes('one') || transcript.includes('moja')) setInput(prev => prev + '1');
-      else if (transcript.includes('two') || transcript.includes('mbili')) setInput(prev => prev + '2');
-      else if (transcript.includes('three') || transcript.includes('tatu')) setInput(prev => prev + '3');
-      else if (transcript.includes('cancel') || transcript.includes('ghairi')) { resetSimulator(); }
-      else if (transcript.includes('send') || transcript.includes('tuma')) { handleNext(); }
+      // AUTO-ADVANCE LOGIC
+      if (transcript.includes('one') || transcript.includes('moja') || transcript.includes('1')) {
+        setInput('1');
+        setTimeout(() => handleNext(), 300); // Wait 0.3s then auto-press send!
+      }
+      else if (transcript.includes('two') || transcript.includes('mbili') || transcript.includes('2')) {
+        setInput('2');
+        setTimeout(() => handleNext(), 300);
+      }
+      else if (transcript.includes('three') || transcript.includes('tatu') || transcript.includes('3')) {
+        setInput('3');
+        setTimeout(() => handleNext(), 300);
+      }
+      else if (transcript.includes('send') || transcript.includes('tuma')) {
+        handleNext(); // Added send logic back just in case!
+      }
+      else if (transcript.includes('cancel') || transcript.includes('ghairi')) { 
+        resetSimulator(); 
+      }
       else {
-        // For amounts or numbers, try to extract digits
+        // For amounts or long numbers, just type them in, don't auto send
         const numbers = transcript.match(/\d+/g);
         if (numbers) setInput(prev => prev + numbers.join(''));
       }
