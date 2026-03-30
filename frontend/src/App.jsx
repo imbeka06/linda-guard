@@ -1,10 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function App() {
   const [step, setStep] = useState('dial'); 
   const [input, setInput] = useState('');
   const [targetNumber, setTargetNumber] = useState('');
   const [amount, setAmount] = useState('');
+
+  useEffect(() => {
+    const socket = new WebSocket('ws://127.0.0.1:8001/ws/mpesa');
+    
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.status === 'completed') {
+        setStep('success');
+        setTimeout(() => resetSimulator(), 5000);
+      } else {
+        alert("❌ Transaction failed: " + data.message);
+        resetSimulator();
+      }
+    };
+
+    return () => socket.close();
+  }, []);
 
   const handleNext = async () => {
     if (step === 'dial' && input === '*334#') {
@@ -43,12 +60,7 @@ function App() {
           });
           
           if (response.ok) {
-             // Switch to Success Screen
-             setStep('success');
-             // Automatically reset the phone after 5 seconds
-             setTimeout(() => {
-                 resetSimulator();
-             }, 5000);
+             // Wait for WebSocket callback from backend instead of setting success immediately
           } else {
              alert("❌ Safaricom rejected it.");
              resetSimulator();

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from app.services import daraja
+from app.main import manager
 
 router = APIRouter()
 
@@ -43,6 +44,14 @@ async def mpesa_callback(request: Request):
     data = await request.json()
     print("\n🔔 --- SAFARICOM CALLBACK RECEIVED --- 🔔")
     print(data)
+    
+    result_code = data['Body']['stkCallback']['ResultCode']
+    
+    # Broadcast the result to the frontend!
+    await manager.broadcast({
+        "status": "completed" if result_code == 0 else "failed",
+        "message": data['Body']['stkCallback']['ResultDesc']
+    })
     
     # We must respond to Safaricom letting them know we received the message
     return {"ResultCode": 0, "ResultDesc": "Accepted"}
