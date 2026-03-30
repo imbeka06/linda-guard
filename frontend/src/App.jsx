@@ -8,7 +8,10 @@ function App() {
 
   useEffect(() => {
     // Welcome message on first load
-    speakMessage("Welcome to Linda Plus. Dial star three three four hash to start.");
+    if ('speechSynthesis' in window) {
+      const welcomeMsg = new SpeechSynthesisUtterance("Welcome to Linda Plus. Dial star three three four hash to start.");
+      window.speechSynthesis.speak(welcomeMsg);
+    }
     
     const socket = new WebSocket('ws://127.0.0.1:8001/ws/mpesa');
     
