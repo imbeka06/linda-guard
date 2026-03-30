@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
+from app.websocket_manager import manager  # Added this import for Live Sync!
 
 router = APIRouter()
 
@@ -96,6 +97,15 @@ async def check_fraud(request: FraudCheckRequest):
         action = "proceed"
         risk_level = "low"
         message = f"✅ SAFE: {phone} is low risk ({risk_score}%)"
+    
+    # 🔥 LIVE SYNC BROADCAST 🔥
+    # Tell the Dashboard to update the UI immediately!
+    await manager.broadcast({
+        "type": "FRAUD_UPDATE",
+        "phone": phone,
+        "risk_score": risk_score,
+        "risk_level": risk_level
+    })
     
     return FraudCheckResponse(
         phone_number=phone,
