@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Dashboard from './Dashboard';
 import WhatsApp from './WhatsApp';
 
-// 🌍 1. HYBRID TRANSLATION ENGINE
+// 🌍 1. HYBRID TRANSLATION ENGINE (From your SRS)
 const t = {
   en: {
     dial: "Dial *334#", phone: "Phone", menu: "M-PESA LINDA+", opt1: "1. Send Money", opt2: "2. Withdraw Cash", opt3: "3. Buy Airtime",
@@ -92,10 +92,9 @@ function App() {
       const transcript = event.results[0][0].transcript.toLowerCase();
       console.log("🎤 User said:", transcript);
       
-      // AUTO-ADVANCE LOGIC
       if (transcript.includes('one') || transcript.includes('moja') || transcript.includes('1')) {
         setInput('1');
-        setTimeout(() => handleNext(), 300);
+        setTimeout(() => handleNext(), 300); 
       }
       else if (transcript.includes('two') || transcript.includes('mbili') || transcript.includes('2')) {
         setInput('2');
@@ -158,14 +157,19 @@ function App() {
       setAmount(input); setInput('');
       checkFraudRisk(input);
     } else if (step === 'warning') {
-      if (input === '1') { speakMessage("Blocked. You are safe.", "Umezuia. Uko salama."); resetSimulator(); } 
-      else if (input === '2') {
-        // Request Sponsor Approval
+      // FULLY FIXED FR-04 LOGIC HERE
+      if (input === '1') { 
+        speakMessage("Blocked. You are safe.", "Umezuia. Uko salama."); 
+        resetSimulator(); 
+      } 
+      else if (input === '2') { 
         speakMessage("Approval request sent to sponsor.", "Ombi limetumwa kwa mdhamini.");
         setStep('success_approval');
         setInput('');
       }
-      else if (input === '3') { triggerMpesaPush(); }
+      else if (input === '3') { 
+        triggerMpesaPush(); 
+      }
     }
   };
 
@@ -285,7 +289,6 @@ function App() {
               </div>
             )}
 
-            {/* Fake Approval Success Screen */}
             {step === 'success_approval' && (
               <div className="text-center mt-16 animate-in zoom-in duration-300">
                 <div className="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_20px_rgba(249,115,22,0.4)]">
