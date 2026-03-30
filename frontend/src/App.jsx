@@ -9,7 +9,20 @@ function App() {
   useEffect(() => {
     const socket = new WebSocket('ws://127.0.0.1:8001/ws/mpesa');
     
+    socket.onopen = () => {
+      console.log('✅ WebSocket connected to backend');
+    };
+
+    socket.onerror = (error) => {
+      console.error('❌ WebSocket error:', error);
+    };
+
+    socket.onclose = () => {
+      console.log('🔌 WebSocket closed');
+    };
+    
     socket.onmessage = (event) => {
+      console.log('📨 Message from backend:', event.data);
       const data = JSON.parse(event.data);
       if (data.status === 'completed') {
         setStep('success');
