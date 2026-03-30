@@ -1,7 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from app.websocket_manager import manager
-from app.routers import mpesa
+from app.routers import mpesa, fraud
 
 app = FastAPI(
     title="LINDA+ GUARD API",
@@ -26,6 +26,9 @@ app.add_middleware(
 
 # Connect the M-Pesa routes
 app.include_router(mpesa.router, prefix="/api/mpesa", tags=["M-Pesa API"])
+
+# Connect the Fraud Detection routes
+app.include_router(fraud.router, prefix="/api/fraud", tags=["Fraud Detection"])
 
 @app.websocket("/ws/mpesa")
 async def mpesa_websocket(websocket: WebSocket):

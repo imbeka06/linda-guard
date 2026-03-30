@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import Dashboard from './Dashboard';
 
 function App() {
+  const [mode, setMode] = useState('ussd'); // 'ussd' or 'dashboard'
   const [step, setStep] = useState('dial'); 
   const [input, setInput] = useState('');
   const [targetNumber, setTargetNumber] = useState('');
@@ -135,7 +137,37 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+    <>
+      {/* Mode Switcher Bar */}
+      <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-cyan-500/50 z-50 p-4 flex justify-center gap-4">
+        <button
+          onClick={() => setMode('ussd')}
+          className={`px-6 py-2 rounded-lg font-bold transition-all ${
+            mode === 'ussd' 
+              ? 'bg-cyan-500 text-white' 
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          📱 USSD Simulator
+        </button>
+        <button
+          onClick={() => setMode('dashboard')}
+          className={`px-6 py-2 rounded-lg font-bold transition-all ${
+            mode === 'dashboard' 
+              ? 'bg-cyan-500 text-white' 
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          📊 Fraud Dashboard
+        </button>
+      </div>
+
+      {/* Dashboard View */}
+      {mode === 'dashboard' && <Dashboard />}
+
+      {/* USSD Simulator View */}
+      {mode === 'ussd' && (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 pt-24">
       {/* Phone Container */}
       <div className="w-[350px] h-[700px] bg-black rounded-[50px] border-[12px] border-gray-800 shadow-2xl overflow-hidden relative flex flex-col">
         
@@ -266,6 +298,8 @@ function App() {
 
       </div>
     </div>
+      )}
+    </>
   );
 }
 
