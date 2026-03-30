@@ -1,0 +1,19 @@
+# Master .gitignore for LINDA+
+
+# Frontend (Node/React)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+
+# Backend (Python/FastAPI)
+backend/venv/
+backend/__pycache__/
+backend/**/*.py[cod]
+backend/*$py.class
+backend/.env
+
+# General OS & IDE Files
+.vscode/
+.DS_Store
+Thumbs.db
