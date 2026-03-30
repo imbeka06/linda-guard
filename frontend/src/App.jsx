@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Dashboard from './Dashboard';
 import WhatsApp from './WhatsApp';
 
-// 🌍 1. HYBRID TRANSLATION ENGINE (From your SRS)
+// 🌍 1. HYBRID TRANSLATION ENGINE
 const t = {
   en: {
     dial: "Dial *334#", phone: "Phone", menu: "M-PESA LINDA+", opt1: "1. Send Money", opt2: "2. Withdraw Cash", opt3: "3. Buy Airtime",
@@ -39,7 +39,7 @@ function App() {
   const [category, setCategory] = useState('General'); 
   const [lang, setLang] = useState('en'); 
   const [riskData, setRiskData] = useState(null); 
-  const [isListening, setIsListening] = useState(false); // NEW: Mic state
+  const [isListening, setIsListening] = useState(false); 
 
   const langRef = useRef(lang);
   useEffect(() => { langRef.current = lang; }, [lang]);
@@ -54,7 +54,6 @@ function App() {
         
         msg.text = currentLang === 'en' ? textEn : (textSw || textEn);
         
-        // Hunt for Kenyan voices if available in the browser
         const voices = window.speechSynthesis.getVoices();
         const kenyanVoice = voices.find(v => v.lang.includes('KE'));
         if (kenyanVoice) msg.voice = kenyanVoice;
@@ -96,7 +95,7 @@ function App() {
       // AUTO-ADVANCE LOGIC
       if (transcript.includes('one') || transcript.includes('moja') || transcript.includes('1')) {
         setInput('1');
-        setTimeout(() => handleNext(), 300); // Wait 0.3s then auto-press send!
+        setTimeout(() => handleNext(), 300);
       }
       else if (transcript.includes('two') || transcript.includes('mbili') || transcript.includes('2')) {
         setInput('2');
@@ -107,13 +106,12 @@ function App() {
         setTimeout(() => handleNext(), 300);
       }
       else if (transcript.includes('send') || transcript.includes('tuma')) {
-        handleNext(); // Added send logic back just in case!
+        handleNext(); 
       }
       else if (transcript.includes('cancel') || transcript.includes('ghairi')) { 
         resetSimulator(); 
       }
       else {
-        // For amounts or long numbers, just type them in, don't auto send
         const numbers = transcript.match(/\d+/g);
         if (numbers) setInput(prev => prev + numbers.join(''));
       }
@@ -161,7 +159,13 @@ function App() {
       checkFraudRisk(input);
     } else if (step === 'warning') {
       if (input === '1') { speakMessage("Blocked. You are safe.", "Umezuia. Uko salama."); resetSimulator(); } 
-      else if (input === '2') { triggerMpesaPush(); }
+      else if (input === '2') {
+        // Request Sponsor Approval
+        speakMessage("Approval request sent to sponsor.", "Ombi limetumwa kwa mdhamini.");
+        setStep('success_approval');
+        setInput('');
+      }
+      else if (input === '3') { triggerMpesaPush(); }
     }
   };
 
@@ -179,7 +183,7 @@ function App() {
         speakMessage("Danger! Blocked due to fraud.", "Hatari! Imezuiwa kwa sababu ya utapeli.", true);
         setStep('blocked');
       } else if (data.action === 'alert') {
-        speakMessage("Warning! High fraud risk. Say 1 to cancel, 2 to proceed.", "Onyo! Hatari ya utapeli. Sema moja kufuta, mbili kuendelea.", true);
+        speakMessage("Warning! High fraud risk. Press 1 to cancel, 2 for approval, 3 to proceed.", "Onyo! Hatari ya utapeli. Bonyeza moja kufuta, mbili kwa ombi, tatu kuendelea.", true);
         setStep('warning');
       } else { triggerMpesaPush(); }
     } catch (error) { triggerMpesaPush(); }
@@ -200,7 +204,6 @@ function App() {
     setStep('dial'); setInput(''); setTargetNumber(''); setAmount(''); setCategory('General'); setRiskData(null);
   };
 
-  // Safe translation getter
   const getText = (key) => t[lang]?.[key] || t['en'][key];
 
   return (
@@ -259,14 +262,38 @@ function App() {
               <div className="bg-red-950/50 p-4 rounded-lg border border-red-500/50">
                 <p className="text-red-500 font-bold flex items-center gap-2 text-lg"><span>⚠️</span> {getText('warnTitle')}</p>
                 <p className="mt-3 text-red-200">{getText('warnSub')} <span className="font-bold text-white text-xl ml-2">{riskData?.risk_score}%</span></p>
-                <div className="mt-4 space-y-2 text-slate-300 border-t border-red-900/50 pt-3"><p className="text-green-400">{getText('warn1')}</p><p className="text-red-400">{getText('warn2')}</p></div>
+                <div className="mt-4 space-y-2 text-slate-300 border-t border-red-900/50 pt-3">
+                  <p className="text-green-400">1. Cancel (Safe)</p>
+                  <p className="text-orange-400">2. Request Sponsor Approval</p>
+                  <p className="text-red-400">3. Proceed anyway</p>
+                </div>
                 <p className="mt-5 text-white font-bold">{getText('reply')} {input}</p>
               </div>
             )}
 
             {step === 'blocked' && (
               <div className="bg-red-900/80 p-6 rounded-lg border border-red-500 text-center mt-8">
-                <p className="text-5xl mb-4">🚫</p><p className="text-white font-bold text-xl tracking-wider">BLOCKED</p>
+                <p className="text-5xl mb-4">🚫</p>
+                <p className="text-white font-bold text-xl tracking-wider mb-2">BLOCKED</p>
+                <p className="text-red-200 text-xs mb-4">Category restricted by Sponsor.</p>
+                <button onClick={() => {
+                  speakMessage("Approval request sent to sponsor.", "Ombi limetumwa kwa mdhamini.");
+                  setStep('success_approval');
+                }} className="bg-orange-500 text-white px-4 py-2 rounded font-bold text-sm w-full animate-pulse hover:bg-orange-600 transition-colors">
+                  Request Override
+                </button>
+              </div>
+            )}
+
+            {/* Fake Approval Success Screen */}
+            {step === 'success_approval' && (
+              <div className="text-center mt-16 animate-in zoom-in duration-300">
+                <div className="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_20px_rgba(249,115,22,0.4)]">
+                  <span className="text-white text-3xl">⏳</span>
+                </div>
+                <h2 className="text-xl font-bold text-white mb-2">Request Sent!</h2>
+                <p className="text-slate-400 text-sm">Waiting for sponsor to approve KSH {amount} for {category}.</p>
+                <button onClick={resetSimulator} className="mt-8 text-cyan-500 hover:text-cyan-400 transition-colors underline text-sm">Return to Home</button>
               </div>
             )}
 
