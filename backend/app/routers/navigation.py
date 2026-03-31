@@ -1,54 +1,41 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from app.websocket_manager import manager
-from app.routers import mpesa, fraud
+import os
+from fastapi import APIRouter, UploadFile, File
+from fastapi.responses import StreamingResponse
+from openai import AsyncOpenAI
+from dotenv import load_dotenv
 
-app = FastAPI(
-    title="LINDA+ GUARD API",
-    description="Triple Intelligence Layer for Fraud Prevention and Smart Spending",
-    version="1.0.0"
-)
+load_dotenv()
+router = APIRouter()
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Configure CORS so your Vite React app can talk to this backend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
-
-# Connect the M-Pesa routes
-app.include_router(mpesa.router, prefix="/api/mpesa", tags=["M-Pesa API"])
-
-# Connect the Fraud Detection routes
-app.include_router(fraud.router, prefix="/api/fraud", tags=["Fraud Detection"])
-
-@app.websocket("/ws/mpesa")
-async def mpesa_websocket(websocket: WebSocket):
-    print("📡 WebSocket connection attempt from frontend")
+@router.post("/voice")
+async def voice_navigation(audio: UploadFile = File(...)):
     try:
-        await manager.connect(websocket)
-        print("✅ WebSocket client connected")
-        while True:
-            data = await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        print("🔌 WebSocket client disconnected")
-    except Exception as e:
-        print(f"❌ WebSocket error: {e}")
-        manager.disconnect(websocket)
+        # Step A: Whisper STT
+        transcript = await client.audio.transcriptions.create(
+            model="whisper-1",
+            file=(audio.filename, audio.file) 
+        )
+        
+        # Step B: Guidance Logic (NeuroVision Core)
+        current_environment = "A clear path forward, but a staircase starts 3 feet ahead."
+        
+        chat_response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a concise blind navigation guide. 2 sentences max."},
+                {"role": "user", "content": f"User: {transcript.text}. Environment: {current_environment}"}
+            ]
+        )
+        guidance = chat_response.choices[0].message.content
 
-@app.get("/")
-async def root():
-    return {
-        "system": "LINDA+ GUARD", 
-        "status": "Online", 
-        "intelligence_layer": "Active"
-    }
+        # Step C: TTS Voice
+        tts_response = await client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=guidance
+        )
+        
+        return StreamingResponse(tts_response.iter_bytes(), media_type="audio/mpeg")
+    except Exception as e:
+        return {"error": str(e)}

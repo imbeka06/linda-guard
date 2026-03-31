@@ -1,117 +1,42 @@
 import os
-from dotenv import load_dotenv # Added to read your .env file
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
+from dotenv import load_dotenv
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from openai import AsyncOpenAI
 
-# Import your existing managers and routers
+# Import from your specific folder structure
 from app.websocket_manager import manager
-from app.routers import mpesa, fraud
+from app.routers import mpesa, fraud, navigation # Added navigation here
 
-# Load environment variables from .env
 load_dotenv()
 
 app = FastAPI(
-    title="LINDA+ GUARD & NEUROVISION API",
-    description="Unified Intelligence Layer for Financial Fraud Prevention and Blind Navigation",
+    title="LINDA-GUARD API",
+    description="Triple Intelligence Layer for Fraud Prevention and NeuroVision Navigation",
     version="1.0.0"
 )
 
-# 1. Initialize OpenAI Client (Reads OPENAI_API_KEY from .env)
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# 2. Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-        "*" # Important for testing from your physical phone
-    ],
+    allow_origins=["*"], # Allows your Vite frontend & Mobile app to connect
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
 
-# 3. Connect existing Routers
+# Connect all the routes in your screenshot
 app.include_router(mpesa.router, prefix="/api/mpesa", tags=["M-Pesa API"])
 app.include_router(fraud.router, prefix="/api/fraud", tags=["Fraud Detection"])
+app.include_router(navigation.router, prefix="/api/navigation", tags=["Navigation"])
 
-# 4. NEUROVISION: Voice Navigation Endpoint
-@app.post("/api/navigation/voice")
-async def voice_navigation(audio: UploadFile = File(...)):
-    """
-    Pitch Strength: Converts live audio to navigation guidance 
-    using Whisper (STT), GPT-4o (Logic), and OpenAI TTS (Voice).
-    """
-    try:
-        # Step A: Transcribe the user's speech
-        transcript = await client.audio.transcriptions.create(
-            model="whisper-1",
-            file=(audio.filename, audio.file) 
-        )
-        user_query = transcript.text
-        
-        # Step B: Placeholder for your Obstacle Detection Data
-        # Integrate your NeuroVision camera logic here
-        current_environment = "A clear path forward, but a staircase starts 3 feet ahead. A wall is on the immediate right."
-        
-        # Step C: Brain - Process query against environment
-        system_prompt = (
-            "You are an assistive navigation guide for a visually impaired user. "
-            "Keep responses extremely concise, under 2 sentences, and prioritize immediate physical safety."
-        )
-        
-        chat_response = await client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"User asked: '{user_query}'. Current environment: {current_environment}"}
-            ]
-        )
-        guidance_text = chat_response.choices[0].message.content
-
-        # Step D: Voice - Generate human-like response
-        tts_response = await client.audio.speech.create(
-            model="tts-1",
-            voice="alloy",
-            input=guidance_text
-        )
-        
-        # Step E: Stream the audio back to the React Native app
-        return StreamingResponse(tts_response.iter_bytes(), media_type="audio/mpeg")
-
-    except Exception as e:
-        print(f"❌ Navigation Error: {e}")
-        return {"error": str(e)}
-
-# 5. Existing WebSocket Logic (Fixed the missing parts)
 @app.websocket("/ws/mpesa")
 async def mpesa_websocket(websocket: WebSocket):
-    print("📡 WebSocket connection attempt from frontend")
     try:
         await manager.connect(websocket)
-        print("✅ WebSocket client connected")
         while True:
-            # Keep connection alive and wait for messages
-            data = await websocket.receive_text()
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        print("🔌 WebSocket client disconnected")
-    except Exception as e:
-        print(f"❌ WebSocket error: {e}")
-        manager.disconnect(websocket)
 
-# 6. Root Health Check
 @app.get("/")
 async def root():
-    return {
-        "system": "LINDA+ GUARD & NEUROVISION", 
-        "status": "Online", 
-        "intelligence_layer": "Active",
-        "navigation_layer": "Ready"
-    }
+    return {"system": "LINDA-GUARD", "status": "Online"}
