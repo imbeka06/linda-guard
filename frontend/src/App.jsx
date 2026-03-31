@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Dashboard from './Dashboard';
 import WhatsApp from './WhatsApp';
+import { API_CONFIG } from './config';
 
 // Securely pull the API key for Whisper AI Voice Recognition
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
@@ -210,7 +211,7 @@ function App() {
   const checkFraudRisk = async (finalAmount) => {
     setStep('processing');
     try {
-      const response = await fetch('http://127.0.0.1:8001/api/fraud/check', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/fraud/check`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone_number: targetNumber, amount: parseInt(finalAmount), category: category.toLowerCase() })
       });
@@ -230,7 +231,7 @@ function App() {
   const triggerMpesaPush = async () => {
     setStep('processing');
     try {
-      await fetch('http://127.0.0.1:8001/api/mpesa/pay', {
+      await fetch(`${API_CONFIG.BASE_URL}/api/mpesa/pay`, {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone_number: targetNumber, amount: parseInt(amount) || 1, category: category })
@@ -244,7 +245,7 @@ function App() {
 
   useEffect(() => {
     speakMessage("Welcome to Linda Plus.", "Karibu Linda Plus.");
-    const socket = new WebSocket('ws://127.0.0.1:8001/ws/mpesa');
+    const socket = new WebSocket(`${API_CONFIG.WS_URL}/ws/mpesa`);
     
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);

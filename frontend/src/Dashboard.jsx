@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_CONFIG } from './config';
 
 export default function Dashboard() {
   const [selectedNumber, setSelectedNumber] = useState('');
@@ -59,7 +60,7 @@ export default function Dashboard() {
 
   // 🔥 NEW: WebSocket Listener for Live Sync
   useEffect(() => {
-    const socket = new WebSocket('ws://127.0.0.1:8001/ws/mpesa');
+    const socket = new WebSocket(`${API_CONFIG.WS_URL}/ws/mpesa`);
     
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
