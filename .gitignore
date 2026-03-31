@@ -17,3 +17,4 @@ backend/.env
 .vscode/
 .DS_Store
 Thumbs.db
+backend/.env

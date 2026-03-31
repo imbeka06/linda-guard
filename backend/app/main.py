@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv # Added to read your .env file
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -8,14 +9,17 @@ from openai import AsyncOpenAI
 from app.websocket_manager import manager
 from app.routers import mpesa, fraud
 
+# Load environment variables from .env
+load_dotenv()
+
 app = FastAPI(
     title="LINDA+ GUARD & NEUROVISION API",
     description="Unified Intelligence Layer for Financial Fraud Prevention and Blind Navigation",
     version="1.0.0"
 )
 
-# 1. Initialize OpenAI Client (Ensure OPENAI_API_KEY is in your .env)
-client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# 1. Initialize OpenAI Client (Reads OPENAI_API_KEY from .env)
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # 2. Configure CORS
 app.add_middleware(
@@ -25,7 +29,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5174",
-        "*" # Added for mobile testing
+        "*" # Important for testing from your physical phone
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -53,7 +57,7 @@ async def voice_navigation(audio: UploadFile = File(...)):
         user_query = transcript.text
         
         # Step B: Placeholder for your Obstacle Detection Data
-        # In production, this would be updated by your camera feed/sensors
+        # Integrate your NeuroVision camera logic here
         current_environment = "A clear path forward, but a staircase starts 3 feet ahead. A wall is on the immediate right."
         
         # Step C: Brain - Process query against environment
@@ -85,7 +89,7 @@ async def voice_navigation(audio: UploadFile = File(...)):
         print(f"❌ Navigation Error: {e}")
         return {"error": str(e)}
 
-# 5. Existing WebSocket Logic
+# 5. Existing WebSocket Logic (Fixed the missing parts)
 @app.websocket("/ws/mpesa")
 async def mpesa_websocket(websocket: WebSocket):
     print("📡 WebSocket connection attempt from frontend")
@@ -93,4 +97,21 @@ async def mpesa_websocket(websocket: WebSocket):
         await manager.connect(websocket)
         print("✅ WebSocket client connected")
         while True:
-            data = await websocket.receive_
+            # Keep connection alive and wait for messages
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        print("🔌 WebSocket client disconnected")
+    except Exception as e:
+        print(f"❌ WebSocket error: {e}")
+        manager.disconnect(websocket)
+
+# 6. Root Health Check
+@app.get("/")
+async def root():
+    return {
+        "system": "LINDA+ GUARD & NEUROVISION", 
+        "status": "Online", 
+        "intelligence_layer": "Active",
+        "navigation_layer": "Ready"
+    }
